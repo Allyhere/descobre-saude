@@ -1,73 +1,99 @@
-# React + TypeScript + Vite
+# Descobre Saude
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+SulAmerica Coverage Explorer - A full-stack application for browsing SulAmerica health insurance plans, TUSS procedure codes, and finding providers.
 
-Currently, two official plugins are available:
+## Architecture
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+descobre-saude/
+  frontend (React + TypeScript + Vite + Tailwind CSS)
+  backend/ (FastAPI + SQLAlchemy + PostgreSQL)
+  scraper/ (Selenium headless + APScheduler)
+  docker-compose.yml (orchestrates all services)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Services
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Service | Port | Description |
+|---------|------|-------------|
+| **Frontend** | 5173 | React SPA with plan browser, TUSS search, and provider finder |
+| **Backend** | 8000 | FastAPI REST API serving products, TUSS codes, and filter options |
+| **Database** | 5432 | PostgreSQL 16 storing all plan and TUSS data |
+| **Scraper** | - | Headless Selenium scraper running on a 24h schedule |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/health` | Health check |
+| GET | `/api/products` | List products (paginated, filterable) |
+| GET | `/api/products/{id}` | Get single product |
+| GET | `/api/tuss` | List TUSS codes (paginated, searchable) |
+| GET | `/api/tuss/{code}` | Get single TUSS code |
+| GET | `/api/stats` | Summary statistics |
+| GET | `/api/filters/product-codes` | Distinct product codes |
+| GET | `/api/filters/plan-names` | Distinct plan names |
+| GET | `/api/filters/segments` | Distinct segments |
+| GET | `/api/filters/classifications` | Distinct classifications |
+| GET | `/api/filters/statuses` | Distinct statuses |
+
+## Quick Start
+
+### Using Docker Compose (recommended)
+
+```bash
+docker compose up --build
 ```
+
+This starts all services:
+- Frontend at http://localhost:5173
+- Backend API at http://localhost:8000
+- PostgreSQL at localhost:5432
+- Scraper runs on a 24h schedule
+
+The backend automatically seeds the database with existing product and TUSS data on first startup.
+
+### Frontend Only (development)
+
+```bash
+npm install
+npm run dev
+```
+
+### Backend Only (development)
+
+```bash
+cd backend
+pip install -r requirements.txt
+# Set DATABASE_URL environment variable
+uvicorn app.main:app --reload --port 8000
+```
+
+## Environment Variables
+
+### Backend
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_URL` | `postgresql://descobre:descobre@db:5432/descobre_saude` | PostgreSQL connection string |
+
+### Scraper
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_URL` | `postgresql://descobre:descobre@db:5432/descobre_saude` | PostgreSQL connection string |
+| `SCRAPE_INTERVAL_HOURS` | `24` | Hours between scraper runs |
+
+## Tech Stack
+
+- **Frontend**: React 19, TypeScript, Vite 7, Tailwind CSS 4, Lucide React
+- **Backend**: FastAPI, SQLAlchemy 2, Alembic, Pydantic v2
+- **Database**: PostgreSQL 16
+- **Scraper**: Selenium (headless Chrome), APScheduler
+- **Infrastructure**: Docker, Docker Compose
+
+## Data Sources
+
+- Product/plan data from SulAmerica public portal
+- TUSS procedure codes (TABELA TUSS)
+- Provider search links to SulAmerica referral network
